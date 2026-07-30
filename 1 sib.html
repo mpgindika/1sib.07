@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>විමර්ශන දත්ත පද්ධතිය - SLCMP</title>
+    <!-- SheetJS and html2pdf for Excel/PDF exports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Login Screen Styles */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .login-card {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-card h2 {
+            margin-bottom: 24px;
+            color: #1e3c72;
+            font-size: 22px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+            font-size: 14px;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            border-color: #2a5298;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #1e3c72;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .login-btn:hover {
+            background-color: #2a5298;
+        }
+
+        .error-msg {
+            color: #d9534f;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        /* Main Application Layout */
+        #app-screen {
+            display: none;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #1e3c72;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .badge {
+            background-color: #ff9800;
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge.admin {
+            background-color: #e91e63;
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            border: 1px solid white;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: white;
+            color: #1e3c72;
+        }
+
+        /* Navigation Tabs */
+        .tabs {
+            display: flex;
+            background-color: #ffffff;
+            border-bottom: 2px solid #e0e0e0;
+            padding: 0 30px;
+        }
+
+        .tab-btn {
+            padding: 15px 25px;
+            border: none;
+            background: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #1e3c72;
+            border-bottom-color: #1e3c72;
+        }
+
+        .content-area {
+            padding: 30px;
+            flex: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Control Bar for Admin Actions & Exports */
+        .control-bar {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-bar input[type="date"] {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+        }
+
+        .btn-primary { background-color: #1e3c72; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-warning { background-color: #ffc107; color: #333; }
+
+        /* Document Styling */
+        .doc-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #1e3c72;
+        }
+
+        .doc-header h2 {
+            color: #1e3c72;
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .doc-header h3 {
+            color: #555;
+            font-size: 16px;
+            font-weight: normal;
+        }
+
+        /* Table Styling */
+        .table-responsive {
+            overflow-x: auto;
+            margin-bottom: 25px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #d3d3d3;
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #f2f4f8;
+            color: #1e3c72;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .total-row {
+            background-color: #e8eef7 !important;
+            font-weight: bold;
+        }
+
+        .section-banner {
+            background-color: #2a5298;
+            color: white;
+            padding: 8px 12px;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            border-radius: 4px;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .admin-only {
+            display: none;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #ffffff;
+            border-top: 1px solid #e0e0e0;
+            color: #777;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-container">
+        <div class="login-card">
+            <h2>විමර්ශන දත්ත පද්ධතිය</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="role">ගිණුම් වර්ගය (Role):</label>
+                    <select id="role">
+                        <option value="user">User Panel</option>
+                        <option value="admin">Admin Panel</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="password">මුරපදය (Password):</label>
+                    <input type="password" id="password" placeholder="මුරපදය ඇතුලත් කරන්න (1234)" required>
+                </div>
+                <button type="submit" class="login-btn">ඇතුළු වන්න</button>
+                <div id="error-msg" class="error-msg">මුරපදය වැරදියි! (මුරපදය: 1234)</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application Screen -->
+    <div id="app-screen">
+        <header>
+            <h1>විමර්ශන දත්ත කළමනාකරණ පද්ධතිය</h1>
+            <div class="user-info">
+                <span id="user-role-badge" class="badge">User</span>
+                <button id="logout-btn" class="logout-btn">පද්ධතියෙන් ඉවත් වන්න</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('tab1')">පලමු ගොනුව: විමර්ශන සංඛ්‍යාත්මක</button>
+            <button class="tab-btn" onclick="switchTab('tab2')">දෙවන ගොනුව: සිදුකරන විමර්ශන විස්තරය</button>
+        </div>
+
+        <div class="content-area">
+            <!-- Global Admin & Export Control Bar -->
+            <div class="control-bar">
+                <div class="control-group">
+                    <label><strong>දින පරාසය:</strong></label>
+                    <input type="date" id="startDate"> සිට
+                    <input type="date" id="endDate">
+                </div>
+                <div class="control-group">
+                    <button class="btn btn-success" onclick="exportToExcel()">Excel බාගත කරගන්න</button>
+                    <button class="btn btn-primary" onclick="exportToWord()">Word බාගත කරගන්න</button>
+                    <button class="btn btn-danger" onclick="exportToPDF()">PDF බාගත කරගන්න</button>
+                    <button class="btn btn-warning" onclick="shareData()">ෂෙයාර් කරන්න</button>
+                </div>
+            </div>
+
+            <!-- Admin Toolbar for Dynamic Additions -->
+            <div id="admin-toolbar" class="admin-only" style="margin-bottom: 20px; background: #fff3cd; padding: 10px; border-radius: 6px; border: 1px solid #ffeeba;">
+                <strong>ඇඩ්මින් පාලක මෙවලම්:</strong>
+                <button class="btn btn-primary" onclick="addRowToActiveTable()" style="margin-left: 10px;">නව පේළියක් (Row) එකතු කරන්න</button>
+                <button class="btn btn-primary" onclick="addColumnToActiveTable()" style="margin-left: 5px;">නව තීරුවක් (Column) එකතු කරන්න</button>
+                <button class="btn btn-success" onclick="addNewSectionTab2()" style="margin-left: 5px;" id="add-sec-btn">නව අංශයක් එකතු කරන්න</button>
+            </div>
+
+            <!-- TAB 1: PDF 1 Content -->
+            <div id="tab1" class="tab-content active">
+                <div class="doc-header">
+                    <h2 contenteditable="false" class="editable-title">2026 වර්ෂයේ විමර්ශන සබැඳි සාරාංශය <span contenteditable="true" class="editable-date">2026.07.28</span> වන දින හෝරා 1800 ට</h2>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="table-tab1">
+                        <thead>
+                            <tr>
+                                <th>කණ්ඩායම/අංශ</th>
+                                <th>වාර්තාවීම්</th>
+                                <th>බෙදාහරින ලද</th>
+                                <th>විනය වෙත යොමු කර ඇති</th>
+                                <th>අමරපෝර්තුව සකසා අවසන් කර ඇති</th>
+                                <th>අංශයන් යටතේ සිදුකරමින් පවතින විමර්ශන</th>
+                                <th>බෙදාහැර නොමැති විමර්ශන රපෝර්තු</th>
+                                <th class="admin-only action-col">ක්‍රියා</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td contenteditable="false">විවිශා</td>
+                                <td class="text-center" contenteditable="false">28</td>
+                                <td class="text-center" contenteditable="false">22</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false">6</td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">ආසේමු(බ) වික</td>
+                                <td class="text-center" contenteditable="false">25</td>
+                                <td class="text-center" contenteditable="false">20</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="text-center" contenteditable="false">5</td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">විඅ - ශ්‍රීලංයුහස්වේබසේමු</td>
+                                <td class="text-center" contenteditable="false">5</td>
+                                <td class="text-center" contenteditable="false">5</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි / අ 57 සේමු - පොන්ගොල්ල</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි / අ 58 සේමු - පුත්තලම</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි/ අ 16 පොසේමු - ඛුස්ස</td>
+                                <td class="text-center" contenteditable="false">4</td>
+                                <td class="text-center" contenteditable="false">4</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වී / අ 161 පාබසේමු - ඇඹිලිපිටිය</td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි/ අ 162 පාබසේමු - ඇල්පිටිය</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි / අ 582 පාබසේමු - හොරණ</td>
+                                <td class="text-center" contenteditable="false">10</td>
+                                <td class="text-center" contenteditable="false">10</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි/අ 572 පාබසේමු - කෑගල්ල</td>
+                                <td class="text-center" contenteditable="false">5</td>
+                                <td class="text-center" contenteditable="false">5</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි/අ 573 පාබසේමු - පුත්තලම</td>
+                                <td class="text-center" contenteditable="false">5</td>
+                                <td class="text-center" contenteditable="false">4</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි / අ 143 පාබසේමු - පැලවත්ත</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි/අ - කුරුණෑගල</td>
+                                <td class="text-center" contenteditable="false">17</td>
+                                <td class="text-center" contenteditable="false">13</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">4</td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි/අ - කුරුවිට</td>
+                                <td class="text-center" contenteditable="false">5</td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">විඅ - මාතර</td>
+                                <td class="text-center" contenteditable="false">6</td>
+                                <td class="text-center" contenteditable="false">6</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">විඅ - කුකුලේ ගඟ</td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">විඅ - කරන්දෙණිය</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr class="total-row">
+                                <td contenteditable="false">එකතුව</td>
+                                <td class="text-center" contenteditable="false">95</td>
+                                <td class="text-center" contenteditable="false">81</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">5</td>
+                                <td class="text-center" contenteditable="false">8</td>
+                                <td class="text-center" contenteditable="false">14</td>
+                                <td class="admin-only action-col text-center"></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">ක්‍ෂේත්‍ර වික</td>
+                                <td class="text-center" contenteditable="false">12</td>
+                                <td class="text-center" contenteditable="false">11</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි / අ 14 සේමු - කොළඹ</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි/ අ 141 බසේමු - වේයන්ගොඩ</td>
+                                <td class="text-center" contenteditable="false">9</td>
+                                <td class="text-center" contenteditable="false">8</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි / අ 142 බසේමු - කොහුවල</td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">අමැක - රත්මලාන</td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි/ අ - කොආව් රත්මලාන</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි/ අ - ආසේ අමාවි - බටලන්ද</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">ස්වසැග - රත්මලාන</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr>
+                                <td contenteditable="false">වි/ අ ඉංපිසේමු - මත්තේගොඩ</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                            <tr class="total-row">
+                                <td contenteditable="false">එකතුව</td>
+                                <td class="text-center" contenteditable="false">35</td>
+                                <td class="text-center" contenteditable="false">32</td>
+                                <td class="text-center" contenteditable="false"></td>
+                                <td class="text-center" contenteditable="false">1</td>
+                                <td class="text-center" contenteditable="false">2</td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="admin-only action-col text-center"></td>
+                            </tr>
+                            <tr class="total-row" style="background-color: #d1e7dd !important;">
+                                <td contenteditable="false">මුළු එකතුව</td>
+                                <td class="text-center" contenteditable="false">158</td>
+                                <td class="text-center" contenteditable="false">135</td>
+                                <td class="text-center" contenteditable="false">3</td>
+                                <td class="text-center" contenteditable="false">8</td>
+                                <td class="text-center" contenteditable="false">12</td>
+                                <td class="text-center" contenteditable="false">23</td>
+                                <td class="admin-only action-col text-center"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: PDF 2 Content -->
+            <div id="tab2" class="tab-content">
+                <div class="doc-header">
+                    <h2 contenteditable="false">මෙම ඒකකය යටතේ සිදුකරමින් පවතින විමර්ශන සබැදි විස්තරය</h2>
+                </div>
+
+                <div id="tab2-sections-container">
+                    <!-- Section: විවිශා -->
+                    <div class="section-block">
+                        <div class="section-banner">
+                            <span contenteditable="false">විවිශා - 06</span>
+                            <button class="btn btn-danger admin-only" style="padding:2px 6px; font-size:11px;" onclick="deleteSection(this)">අංශය මකන්න</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">අංකය</th>
+                                        <th style="width: 12%;">දිනය</th>
+                                        <th style="width: 60%;">සිදුවීම</th>
+                                        <th style="width: 23%;">වත්මන් තත්වය</th>
+                                        <th class="admin-only action-col" style="width: 5%;">ක්‍රියා</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">1</td>
+                                        <td contenteditable="false">2026.04.10</td>
+                                        <td contenteditable="false">"මෙය පෙත්සමක් නොව යථාර්තය අවබෝධ කරගෙන විනිවිධ භාවයකින් යුතුව ඉදිරි ක්‍රියාමාර්ග ගැනීම සඳහා* යන මැයෙන් ගරු ජනාධිපති තුමා වෙත දින රහිතව ඉදිරිපත් කර ඇති නිර්නාමික ලිපිය.</td>
+                                        <td contenteditable="false">විනයාරක්ෂක අමනිරීක්ෂණ සමථයකට කිරීමට ඇත පත්</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">2</td>
+                                        <td contenteditable="false">2026.04.11</td>
+                                        <td contenteditable="false">8 ශ්‍රීලපාහ කොනොනි සමාජ ශාලා මහසභා රැස්වීම සහ ඒකකය යටතේ ඇති කණ්ඩායම් හි විවිධ අවශ්‍යතා සඳහා බවට පවසා එම ඒකකය යටතේ රාජකාරි කරනු ලබන කොනොනින්/සෙනින් වෙතින් ඒකක "සී ” කණ්ඩායම් භාර බලලත් නිලධාරී වශයෙන් රාජකාරි කරනු ලබන සෙ/321080 බනි 11 දිල්හාන් කුමාර එච්ව්බිඒ යන බලලත් නිලධාරී සහ එම ඒකක ජ්‍යෙෂ්ඨ කොහොනි වශයෙන් රාජකාරි කරනු ලබන සෙ/ 330417 කෝප්‍රල් දිසානායක ඩිඑම් පිඑස් යන කොනොනි විසින් මුදල් එකතු කරන බවට ශ්‍රීලයුපොහේබ වෙත ලද තොරතුරකට අනුව උක්ත බලලත් නිලධාරී සහ කොනොනි 2026.04.24 වන දින හෝරා 1930 ට පමණ ශ්‍රීලයුපොහේබ භාරයට ගැනීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">නිරීක්ෂණ සමථයකට විනයාරක්ෂක පත්කර අම අධීක්ෂණය ඉදිරිපත් කර ඇත සඳහා</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">3</td>
+                                        <td contenteditable="false">2026.07.07</td>
+                                        <td contenteditable="false">1 ශ්‍රීලයුපොහේබ වෙත අයත් විනයාරක්ෂක අංශය - යුහමුනේක රත්මලාන යටතේ රාජකාරි කරනු ලැබු සෙ/679875 කෝප්‍රල් ඩිෂාන් පිටිඒ, සෙ/679051 ලා/කෝ ප්‍රනාන්දු එස්සිටි යන කොනොනින් ඔවුන් විවේක ගන්නා සෙසුනිල භඨ නිවාසය තුළ 2026.06.30 වන දින මත්පැන් පානය කරමින් සිටියදී කෝප්‍රල් ඩිල්ෂාන් පිටිඒ විසින් සුසාඅම යටතේ රාජකාරි කරනු ලබන 3 ශ්‍රීලයුපොහේබ වෙත අයත් ති/72688 ලුතිතන්(උපා) එට්ටි ජයසුරිය යන නිලධාරී හට දුරකථන ඇමතුමක් ලබා දී ඔවුන් සමගින් මත්පැන් පානය කිරීම සඳහා පැමිණෙන ලෙසට දන්වා සිටීමෙන් පසුව ලුතිතන් (උපා) එමිට්ටි ජයසුරිය යන නිලධාරි සෙසුනිල භඨ නිවාසය වෙත පැමිණ ඔවුන් සමගින් මත්පැන් පානය කිරීමෙන් අනතුරුව තත් නිලධාරි සහ කෝප්‍රල් ඩිල්ෂාන් පිටිඒ යන කොනොනි 2026.07.01 හෝරා 0015 ට පමණ යුහමුනේක රත්මලාන "බී" දොරටුව වෙතින් අනවසරයෙන් කඳවුරෙන් පිටතට ගොස් ඇති බවට නිරීක්‍ෂණය වීමේ සිදුවීම</td>
+                                        <td contenteditable="false">කෝප්‍රල් ඩිල්ෂාන් පිටිඒ යන කොනොනි හීනොනොව ඇති බැවින් අත්අඩංගුවට ගැනීමට ඇත.</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">4</td>
+                                        <td contenteditable="false">2026.07.13</td>
+                                        <td contenteditable="false">8 ශ්‍රීලපාහ වෙත අයත් දැනට යුද්ධ හමුදා බෞද්ධ බල මණ්ඩලය - පනාගොඩ යටතේ රාජකාරි කරනු ලබන සෙ/332792 ලා/කෝ ජයකොඩිරත්න ජේඑව යන කොනොනි 2026.07.13 වන දින හෝරා 0900 සිට එදින හෝරා 1300 දක්වා කෙටි නිවාඩු ලබා කඳවුරෙන් බැහැරව කොළඹ රිමාන්ඩ් බන්ධනාගාරයේ රක්ෂිත බන්ධනාගාර ගත කර සිටින තත් කොනොනිගේ මිතුරෙකු බැලීම සඳහා ගිය අවස්ථාවේ බන්ධනාගාර පොලිස් නිලධාරීන් විසින් උක්ත කොනොහි පරීක්ෂාවට ලක් කිරීමේදි ඔහු සන්තකයේ තිබී බන්ධනාගාරය වෙත අනවසරයෙන් රැගෙන යමින් තිබූ දුම්කොල ග්‍රෑම් 300 යි මිලිග්‍රෑම් 700 ක්, කලු පැහැති sදබදර ස්මාර්ට් වර්ගයේ ජංගම දුරකථනයක් හා භධණෂ් වර්ගයේ කළු පැහැති ජංගම දුරකතනයක් සමගින් තත් කොහොනි එදින හෝරා 1215 ට පමණ අත්අඩංගුවට ගෙන ඉදිරි පරීක්ෂණ කටයුතු සඳහා එදිනම හෝරා 1540 ට පමණ බොරැල්ල පොලිස් ස්ථානය වෙත භාරදීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">පරීක්ෂණ කටයුතු සිදුකරමින් පවති</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">5</td>
+                                        <td contenteditable="false">2026.07.21</td>
+                                        <td contenteditable="false">2026.07.21 වන දින හෝරා 1600 සිට හෝරා 1900 දක්වා වූ කාලය තුළ ශ්‍රීලයුපොහේබ වෙතින් 71 බලඝණය - මැනිං ටවුන් සිදුකරන ලද හදිසි ස්ථානීය පරීක්ෂාවේදී එම බලඝණය යටතේ රෙම ඉසේරෙ හොකී සංචිතය යටතේ පුහුණුවීම් සිදු කරනු ලබන සෙනින් විවේක ගනු ලබන භඨ නිවාසයේ රැදී සිටි සෙ/ එස් 102722 ඉසෙ ජෝසෆ් පිවිස් 9(ස්වේ) ඉසේරෙ යන කොනොනිගේ පුද්ගලික බඩුභාහිරාදිය පරීක්‍ෂා කිරීමේදී එහි තිබී දුම්කොල (තූල්) මිලි ග්‍රෑම් 10 ක ප්‍රමාණයක් එදින හෝරා 1830 ට පමණ නිරීක්ෂණය වීමෙන් පසු තත් සෙහි ශ්‍රීලයුපොහ්ට භාරයට ගැනීමේ සිදුවීම</td>
+                                        <td contenteditable="false"></td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">6</td>
+                                        <td contenteditable="false">2026.07.25</td>
+                                        <td contenteditable="false">6 ශ්‍රීලංස සබ වෙත අයත් දැනට මිහිදුසෙත් මැදුරේ මානි ෂෂ වශයෙන් රාජකාරී කරනු ලබන නි/66966 මේජර් එස්පී සමරනායක යන ජ්‍යෙෂ්ඨ නිලධාරි 2026.07.25 වන දින හෝරා 0900 ට පමණ බැහැරවාසි අවසරය මත කඳවුරෙන් බැහැරව කටුනායක පාර, නයිවල, වේයන්ගොඩ යන ලිපිනයේ පිහිටි "කොවැන්රෝ” උත්සව ශාලාව වෙත පැමිණ ඔහුගේ මිතුරන් පිරිසක් සමඟින් මත්පැන් සාදයකට සහභාගීවී බීමත්ව එහි සිටි වෙනත් පිරිසක් සමඟින් ආරවුලක් ඇති කරගෙන පහරදී කලහාකාරී ලෙස උත්සව ශාලාවේ දේපල වලට හානි කරනු ලබන බවට වේයන්ගොඩ පොලිස් ස්ථානය වෙත ලද පැමිණිල්ලකට අනුව එදින හෝරා 1500 ට පමණ එම පොලිස් ස්ථානය වෙතින් තත් ජ්‍යෙෂ්ඨ නිලධාරි අත්ත්අඩංගුවට ගැනීමේ සිදුවීම.</td>
+                                        <td contenteditable="false"></td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Section: ආසේමු(බටහිර) වික -->
+                    <div class="section-block">
+                        <div class="section-banner">
+                            <span contenteditable="false">ආසේමු(බටහිර) වික - 5</span>
+                            <button class="btn btn-danger admin-only" style="padding:2px 6px; font-size:11px;" onclick="deleteSection(this)">අංශය මකන්න</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">අංකය</th>
+                                        <th style="width: 12%;">දිනය</th>
+                                        <th style="width: 60%;">සිදුවීම</th>
+                                        <th style="width: 23%;">වත්මන් තත්වය</th>
+                                        <th class="admin-only action-col" style="width: 5%;">ක්‍රියා</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">1</td>
+                                        <td contenteditable="false">2026.02.12</td>
+                                        <td contenteditable="false">2025 වර්ෂයේ අන්තර් රෙජිමේන්තු කරාතේ තරගාවලියේ සිදුවු වංචනික ක්‍රියාවන් දැක්වීම පිණිස යන ශිර්ෂය යටතේ කරාතේ ක්‍රිඩාවේ සුභ සිද්ධිය උදෙසා කටයුතු කරන ක්‍රිඩකයින් යනුවෙන් සඳහන් කර දාතම රහිතව අධ්‍යක්‍ෂක - ක්‍රීඩා අම වෙත ඉදිරිපත් කර ඇති ලිපිය සබැඳි සිදුවීම</td>
+                                        <td contenteditable="false">විනයාරක්ෂක අම අධික්ෂණයට ඉදිරිපත් කර ඇත</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">2</td>
+                                        <td contenteditable="false">2026.06.14</td>
+                                        <td contenteditable="false">යුහ ක්‍රීඩා සංවර්ධන කළමණාකරන මධ්‍යස්ථාන මානි 1 (පාලන) වශයෙන් රාජකාරි කරනු ලබන නි/4939 ලුතිතන් කර්නල් ඩිඩිඑස් ආර්එම් දුණුසිංහ ගැහේබ යන ජ්‍යෙෂ්ඨ නිලධාරීගේ පුද්ගලික පරිහරණය සඳහා ගෙනවිත් තිබු Lenovo i3 වර්ගයේ ලැප්ටොප් පරිඝනක යන්ත්‍රය නිලධාරී නිවස්නයේ තත් ජ්‍යෙෂ්ඨ නිලධාරීගේ කාමරයේ තිබියදී, 2026.06.13 වන දින අස්ථානගත වීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">අ/5 අධීක්ෂණය සඳහා ඉදිරිපත් කර ඇත</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">3</td>
+                                        <td contenteditable="false">2026.06.16</td>
+                                        <td contenteditable="false">ආපුම - හේනානිගල වෙත කුලී ගෙවීමේ පදනම මත පවරාගෙන ඇති බව 5726 දරන ලොරි රථය 2026.06.21 වන දින හෝරා 1000 ට පමණ නිසි ක්‍රම වේදයට අනුව ධාවනයෙන් ඉවත් නොකර (සැප්‍රඅම දත්ත පද්ධතියෙන්) ප්‍රධාන උපදේශක ජ්‍යෙෂ්ඨ නිලධාරිගේ උපදෙස් මත ආපුම - හෙනානිගල සිට සහරා කේටරීන් සේවිස් SF පෙරේරා මාවත, ආනන්ද පාසල අසල, පුත්තලම යන ලිපිනය වෙත පැමිණ සිටියදී ශීලයුපොහේබ වෙත ලද තොරතුරකට අනුව එදින හෝරා 1900 ට පමණ ශීලයුපොහේබ භාරයට ගැනීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">ආපුම - හේනානිගල සේනාවිධායක, ප්‍රධාන උපදේශක සහ 630/g ප්‍රබොර නිලධාරි වෙතින් ප්‍රකාශ සටහන් කර ගැනීමට ඇත</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">4</td>
+                                        <td contenteditable="false">2026.07.23</td>
+                                        <td contenteditable="false">2026.07.23 වන දින හෝරා 1630 ට පමණ ආසේමු(බටහිර) විනයාරක්ෂක කණ්ඩායම වෙතින් යුද්ධ හමුදා රංග කලාඅම පුහුණු පාසලෙහි සිදුකරන ලද හදිසි සෝදිසි පරීක්‍ෂාවේදී එම පුහුණු පාසලේ බියුගල් පාඨමාලා අංක 77 හදාරමින් සිටි සෙ/633373 කාසෙ කුමාර එච්ඩ්ඩි - 5 ලවියාඉ යන සෙනිගේ සොල්දාදු පෙට්ටිය පරීක්‍ෂා කිරීමේදී එහි තිබි මි:මි 09 වර්ගයේ පිව පතරොමක් හමුවීමෙන් පසු තත් කොනොනි ශ්‍රීලයුපොහේබ භාරයට ගැනීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">පතරොම්/වෙඩි ද්‍රව්‍ය කාර්මික නියෝජිතයෙකුගේ සහය ඉල්ලුම් කර ඇත</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">5</td>
+                                        <td contenteditable="false">2026.07.27</td>
+                                        <td contenteditable="false">රෙම ශීලකාභ මළල ක්‍රීඩා සංචිතය යටතේ රාජකාරි කරනු ලබන සෙ/100473 ලා/කෝ විජේසිංහ කේඩිඑන්සී - 5(ස්වේ) ශීලකාහ යන කොනොනි 2026.07.01 වන දින සිට 2026.09.30 වන දින දක්වා පුහුණුවීම් කටයුතු සඳහා කඳවුරෙන් බැහැරව සිටීමට රෙම ශීලකාහ වෙතින් අවසර පතක් නිකුත් කර තිබියදී තත් කොනොනි 2026.06.25 වන දින හෝරා 1045 ට පමණ හෝමාගම ප්‍රදේශයේ රැඳි සිටියදී හෝමාගම පොලිස් ස්ථානයේ නිළධාරීන් පිරිසක් තත් කොනෙහි පරීක්‍ෂාවට ලක් කිරීමේදී ඔහු සන්තකයේ හෙරෝයින් නමැති මත්ද්‍රව්‍ය මිලි ග්‍රෑම් 500 ක් ඇති බවට නිරීක්‍ෂණය වීමෙන් පසු තත් කෙනොනි අත්අඩංගුවට ගෙන සිදුකරන ලද විමර්ශනයේදී ඔහු සන්තකයේ මෙරට නිෂ්පාදිත ජීව අත්බෝම්බයක් හමුවීමේ සිදුවීම</td>
+                                        <td contenteditable="false">පොලිස් වාර්තාව ලබා ගැනීමට ඇත. ක්‍රීඩාභාර නිලධාරි වෙතින් ප්‍රකාශයක් ලබා ගැනීමට ඇත</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Section: විඅ 57 පොසේමු -->
+                    <div class="section-block">
+                        <div class="section-banner">
+                            <span contenteditable="false">විඅ 57 පොසේමු - 1</span>
+                            <button class="btn btn-danger admin-only" style="padding:2px 6px; font-size:11px;" onclick="deleteSection(this)">අංශය මකන්න</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">අංකය</th>
+                                        <th style="width: 12%;">දිනය</th>
+                                        <th style="width: 60%;">සිදුවීම</th>
+                                        <th style="width: 23%;">වත්මන් තත්වය</th>
+                                        <th class="admin-only action-col" style="width: 5%;">ක්‍රියා</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">1</td>
+                                        <td contenteditable="false">2026.07.22</td>
+                                        <td contenteditable="false">1 යාපාරෙ වෙත අයත් දැනට මානි රථ රියදුරෙකු වශයෙන් රාජකාරි කරනු ලබන සෙ/828881 ලා/කෝ සුභසිංහ එස්එම්ඊ යන කොනොනි නිවාඩු ලබා අංක 19, ලිහිණි වැහැර ජනපදය, දොඩම්ගස්ලන්ද යන ලිපිනයේ පිහිටි සිය නිවස වෙත පැමිණ 2026.07.19 වන දින රාත්‍රියේ යාබද නිවසක පැවති උපන්දින සාදයකට සහභාගිව සිටියදී එම ස්ථානයේ රැඳී සිටි පුද්ගලයින් පිරිසක් සමග බහින් බස් වීමක් සිදුව තත් කොනොනි විසින් එස්එම් සවිත්ත සංජිව ගුණසේකර යන අය හට 2026.07.20 වන දින හෝරා 0100 ට පමණ පිහියකින් පහරදී තුවාල සිදුකිරීම හේතුවෙන් එම පුද්ගලයා ප්‍රතිකාර සදහා කුරුණෑගල ශික්ෂණ රෝහල වෙත ඇතුළත් කිරීමේ සිදුවීමට අදාළව උක්ත කොනොනි 2026.07.20 වන දින හෝරා 1645 ට පමණ මදුරාගොඩ පොලිස් ස්ථානය වෙතින් අත්අඩංගුවට ගැනීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">යතුරු ලියනය කරමින් පවති</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Section: විඅ - කුරුණෑගල -->
+                    <div class="section-block">
+                        <div class="section-banner">
+                            <span contenteditable="false">විඅ - කුරුණෑගල - 4</span>
+                            <button class="btn btn-danger admin-only" style="padding:2px 6px; font-size:11px;" onclick="deleteSection(this)">අංශය මකන්න</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">අංකය</th>
+                                        <th style="width: 12%;">දිනය</th>
+                                        <th style="width: 60%;">සිදුවීම</th>
+                                        <th style="width: 23%;">වත්මන් තත්වය</th>
+                                        <th class="admin-only action-col" style="width: 5%;">ක්‍රියා</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">1</td>
+                                        <td contenteditable="false">2026.07.08</td>
+                                        <td contenteditable="false">5 (ස්වේ) ගරෙ වෙත අයත් දැනට මා/නි රථ රියදුරකු වශයෙන් රාජකාරි කරනු ලබන සෙ/ පී102082 ලා/කෝ විමලසේන කේපිආර්ථච් යන කොනොනි 2026.07.08 වන දින පිටතවාසි අවසරය මත කඳවුරෙන් බැහැරව තිබ්බටුවාව, උඩුබද්දාව ප්‍රදේශයේ රැඳී සිටියදී දුම්මලසූරිය පොලිස් ස්ථාන නිලධාරීන් පිරිසක් විසින් වෙතින් තත් කොනොනි පරීක්ෂා කිරීමේදී ඔහු සන්තකයේ තිබී අයිස් නමැති නීතිවිරෝධී මත්ද්‍රව්‍ය මිලි ග්‍රෑම් 110 ප්‍රමාණයක් සමගින් එදින හෝරා 1935 ට පමණ අත්අඩංගුවට ගැනීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">බෙදාහැර ඇත විවිශා සඳහා අධික්ෂණය ඉදිරිපත් කර ඇත</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">2</td>
+                                        <td contenteditable="false">2026.07.14</td>
+                                        <td contenteditable="false">රණවිරු සේවා අධිකාරිය - බම්බලපිටිය යටතේ රාජකාරී කරනු ලබන සෙ/368577 බනි 1 ජේඑම්සි ජයසුන්දර - 4 ශ්‍රීලංසිරෙ යන බලලත් නිලධාරි සහ සෙ/388972 කෝප්‍රල් ජයශාන් ඩබ්ස්ඒ - 21 ශ්‍රීලංසිරෙ යන කෙනොනි 2026.07.14 වන දින හෝරා 0830 සිට එදින හෝරා 1630 දක්වා කෙටි නිවාඩු ලබා දොරඹාවිල, තුත්තිරිපිටිගම, හෙට්ටිපොළ යන ලිපිනයේ පිහිටි උක්ත බලලත් නිලධාරීගේ නිවස වෙත පැමිණ තත් බලලත් නිලධාරී හට අයත් භක ඊඨධ 0897 අංක දරන ඣ 100 වර්ගයේ යතුරු පැදියෙන් හෙපොළ ඔලිගම ප්‍රදේශය වෙත ගොස් ඔලිගම වැව අසල මාර්ගයේ උප් ටික 7426 අංක දරන ස්කූටර් වර්ගයේ යතුරු පැදියකින් ගමන්ගත් කාන්තාවකගේ ගෙලබැදි රන්මාලය කොල්ලකා පලායමින් සිටියදී ප්‍රදේශවාසින් විසින් උක්ත බලලත් නිලධාරි සහ කොනොනි අල්ලා හෙට්ටිපොළ පොලිස් ස්ථානය වෙත භාරදීමේ සිදුවීම</td>
+                                        <td contenteditable="false"></td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">3</td>
+                                        <td contenteditable="false">2026.07.17</td>
+                                        <td contenteditable="false">සෙ/ කක්ෂු113296 සාසෙ සේමසිංහ එස් බිඒඑල්බි - 15 ශ්‍රීලංජා ආබමු යන සෙනි නිවාඩු ලබා වලස්වැව. ඇඩෝගම යන ලිපිනයේ පිහිටි සිය නිවස වෙත පැමිණ සිටියදී මාස කිහිපයකට ප්‍රථම එම ප්‍රදේශයේ පදිංචි වයස අවුරුදු 16 මාස 07 ක් පමණ වන බාල වයස්කාර දැරියක් හට ස්ත්‍රී දුෂණයක් සිදුකිරීම සම්බන්ධයෙන් එම දැරියගේ දෙමව්පියන් විසින් අඹන්පොල පොලිස් ස්ථානයේ ළමා හා කාන්තා කාර්යංශය වෙත සිදුකරන ලද පැමිණිල්ලට අදාළව උක්ත සෙහි 2026.07.16 වන දින හෝරා 1740 ට පමණ එම පොලිස් ස්ථානය වෙතින් අත්අඩංගුවට ගැනීමේ සිදුවිම</td>
+                                        <td contenteditable="false">විවිශා සඳහා අධික්ෂණය ඉදිරිපත් කර ඇත</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">4</td>
+                                        <td contenteditable="false">2026.07.21</td>
+                                        <td contenteditable="false">7 ශ්‍රීලංඉ වෙත අයත් සෙ/245926 කෝප්‍රල් යශාන්ත ඩිඒ යන කොනොනි 2026.07.18 වන දින හෝරා 1300 සිට 2026.07.30 වන දින හෝරා 1800 දක්වා නිවාඩු ලබා අංක 191/2, වැලිගොඩපිටිය, පොල්ගහවෙල යන ලිපිනයේ පිහිටි තාවකාලිකව පදිංචි නිවස වෙත පැමිණ සිටියදී 2026.07.21 වන දින උදෑසන තත් කොතොනි හට ඇති වූ අසනීප තත්ත්වයක් හේතුවෙන් එදින හෝරා 0530 ට පමණ පොල්ගහවෙල මූලික රෝහල වෙත ඇතුලත් කිරීමෙන් පසු වැඩිදුර ප්‍රතිකාර සඳහා කුරුණෑගල ශික්ෂණ රෝහලේ හදිසි ප්‍රතිකාර ඒකකය වෙත ඇතුලත් කර සිටියදී ඔහු එදින හෝරා 0800 ට පමණ මියයාමේ සිදුවීම.</td>
+                                        <td contenteditable="false">යතුරු ලියනය කරමින් පවති</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Section: විඅ - කුරුවිට -->
+                    <div class="section-block">
+                        <div class="section-banner">
+                            <span contenteditable="false">විඅ - කුරුවිට - 2</span>
+                            <button class="btn btn-danger admin-only" style="padding:2px 6px; font-size:11px;" onclick="deleteSection(this)">අංශය මකන්න</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">අංකය</th>
+                                        <th style="width: 12%;">දිනය</th>
+                                        <th style="width: 60%;">සිදුවීම</th>
+                                        <th style="width: 23%;">වත්මන් තත්වය</th>
+                                        <th class="admin-only action-col" style="width: 5%;">ක්‍රියා</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">1</td>
+                                        <td contenteditable="false">2026.06.21</td>
+                                        <td contenteditable="false">තෙළදිරිය හා මහවලතැන්න ගමේ සිදුවන දුෂණ සම්බන්ධවයි යන මැයෙන් ග්‍රාම ආරක්‍ෂඛ කමිටුව වෙතින් යුද්ධ හමුදාධිපති තුමන් වෙත 2026.05.22 දින සහිතව ඉදිරිපත් කර ඇති ලිපිය</td>
+                                        <td contenteditable="false">3/arphi අධික්ෂණයට ඉදිරිපත් කිරීමට ඇත.</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">2</td>
+                                        <td contenteditable="false">2026.07.12</td>
+                                        <td contenteditable="false">12 ශ්‍රීලංජා ආබමු වෙත අයත් දැනට 232 පාබසේමු හි ආරක්‍ෂක රාජකාරි ඉටුකරනු ලබන සෙ/Q111065 සාසෙ පුෂ්ප කුමාර එන්ඩී යන සෙනි 2026.07.06 වන දින හෝරා 0600 සිට 2026.07.16 වන දින තෝරා 1800 දක්වා කාලය තුල නිවාඩු ලබා කොරටුවේ ගොඩ, ඕපනායක යන ලිපිනයේ පිහිටි සිය නිවස වෙත පැමිණ 2026.07.11 වන දින තත් සෙතිගේ නිවස ආසන්නයේ පදිංචි දෙබලුවල පන්සලවත්තේ ප්‍රමුද්‍යා උදයංගනී යන වයස අවු 17 ක් පමණ වන දැරිය හට ලිංගික අතවරයක් කල බවට ඇයගේ මව විසින් එදිනම ඕපනායක පොලිස් ස්ථානය වෙත කරන ලද පැමිණිල්ල විභාග කිරීමට තත් සෙහි එම පොලිස් ස්ථානය වෙත කැඳවා 2026.07.11 වන දින හෝරා 2230ට පමණ අත්අඩංගුවට ගැනීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">ආසේමු (බටහිර) අධික්ෂණය සඳහා ඉදිරිපත් කර ඇත</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Section: විඅ - කුකුලේ ගඟ -->
+                    <div class="section-block">
+                        <div class="section-banner">
+                            <span contenteditable="false">විඅ - කුකුලේ ගඟ - 1</span>
+                            <button class="btn btn-danger admin-only" style="padding:2px 6px; font-size:11px;" onclick="deleteSection(this)">අංශය මකන්න</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">අංකය</th>
+                                        <th style="width: 12%;">දිනය</th>
+                                        <th style="width: 60%;">සිදුවීම</th>
+                                        <th style="width: 23%;">වත්මන් තත්වය</th>
+                                        <th class="admin-only action-col" style="width: 5%;">ක්‍රියා</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">1</td>
+                                        <td contenteditable="false">2026.07.17</td>
+                                        <td contenteditable="false">සාසාමේපුආ - කුකුලේ ගග ප්‍ර අංශය වෙත අයත් කුලී ගෙවීමේ පදනම මත ව්‍යුහ වෙත පවරා ගන්නා ලද උෂ් භෘ 5462 අංක දරණ TOYOTA COASTER වර්ගයේ බස් රථය 2026.07.17 වන දින හෝරා 1800 සිට ධාවනයෙන් ඉවත් කර බස් රථය හිමිකරු වෙත භාරදීම සදහා 2026.07.17 වන දින හෝරා 2120 ට පමණ කදවුරෙන් පිටතට රැගෙන එන අවස්ථාවේදී පුහුණු ආයතනයේ ශ්‍රීලයුපොහේබ අංශය මගින් බස් රථය මුදා හැරීමට අදාල ලියකියවිලි පරීක්ෂා කිරීමෙන් පසු මුදාහැරීමේ සංඥාවේ සදහන් ඩීසල් ඉන්ධන ලීටර 35 ක ප්‍රමාණය පරීක්ෂා කිරීමේදී උක්ත බස් රථයේ ඉන්ධන ටැංකිය තුල ඩීසල් ලීටර් 35 කට වඩා වැඩි ප්‍රමාණයක් ඇති බව නිරීක්ෂණය වීමෙන් පසු බස් රථය ශ්‍රීලයුපොහේබ භාරයට ගෙන සිදුවීම සබැදිව කරුණු සොයා බැලීමේදී යාප්‍ර අංශ ලිපිකරු වන සෙ/526069 කෝප්‍රල් චන්ද්‍රසේකර සිළුම්එල්ගම් 4 විපාරෙ යන කොනොනීන්ගේ උපදෙස් මත යාප්‍ර අංශ රියදුරෙකු වන සෙ/2z 03055 ලා/කෝ සමිත් කුමාර එස්එම් - 2 (සෙව්) ශ්‍රීලංසිරෙ යන කොනොනි විසින් මෙම පුහුණු ආයතනයේ ඛෂ 6137 අංක දරණ ජල බව්සර් රථයට අදාල යුආප්‍ර 08 හි ඩීසල් ලීටර් 50 ක ප්‍රමාණයක් ශ්‍රීලයුසේඛ අංශය - කුකුලේ ගඟ මගින් ලබාගෙන අදාල බස් රථයට එක්කර ඇති බවට තහවුරු කර ගැනීමෙන් පසු උක්ත ලිපිකරු සහ රියදුරු ශ්‍රීලයුපොහේබ භාරයට ගැනීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">යතුරු ලියනය කරමින් පවතී.</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Section: 573 පාබසේමු -->
+                    <div class="section-block">
+                        <div class="section-banner">
+                            <span contenteditable="false">573 පාබසේමු - 1</span>
+                            <button class="btn btn-danger admin-only" style="padding:2px 6px; font-size:11px;" onclick="deleteSection(this)">අංශය මකන්න</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">අංකය</th>
+                                        <th style="width: 12%;">දිනය</th>
+                                        <th style="width: 60%;">සිදුවීම</th>
+                                        <th style="width: 23%;">වත්මන් තත්වය</th>
+                                        <th class="admin-only action-col" style="width: 5%;">ක්‍රියා</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">1</td>
+                                        <td contenteditable="false">2026.07.20</td>
+                                        <td contenteditable="false">1 ශ්‍රීලංසිරෙ වෙත අයත් බල ඇණි පුහුණු පාසල ආලංකුලම්, තුනුක්කායි යටතේ බල ඇණි පුහුණු පාඨමාලාව හදාරමින් සිටි සෙ/369358 මා/සැ වික්‍රම ආරච්චි ඩබ්ලිඒඑස් යන ජ්‍යෙකොතොනි නිවාඩු ලබා මි සිය නිවස වෙත පැමිණ 2026.07.20 වන දින ඔහු හට අයත් NW BHM 8619 අංක දරන යතුරු පැදියෙන් දරුවන් ආණමඩුව කන්නංගර විද්‍යාලය වෙත ඇරලවා නැවත නිවස වෙත පුත්තලම - කුරුණෑගල මාර්ගයේ පුත්තලම දෙසට ගමන් කරමින් සිටියදී පරමාකන්ද හංදිය අසලදී ඊට ප්‍රතිවිරුද්ධ දෙසින් පැමිණි භථ 9895 අංක දරන ශ්‍රීලංගම මගී ප්‍රවාහන බස් රථය තත් ජ්‍යෙකොනොනි විසින් පදවන ලද යතුරු පැදියේ ගැටී එදින හෝරා 0705 ට පමණ රිය අනතුරකට භාප්තය වීම හේතුවෙන් උක්ත ජ්‍යෙකොතොනි තුවාල ලබා ප්‍රතිකාර සඳහා එදින හෝරා 0730 ට පමණ ආණමඩුව ප්‍රාදේශීය රෝහල වෙත ඇතුලත් කිරීමෙන් පසු වෛද්‍යවරුන් විසින් ඔහු මියගොස් ඇති බවට දැනුම්දීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">යතුරු ලියනය කරමින් පවතී.</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Section: ක්‍ෂේත්‍ර වික -->
+                    <div class="section-block">
+                        <div class="section-banner">
+                            <span contenteditable="false">ක්‍ෂේත්‍ර වික - 1</span>
+                            <button class="btn btn-danger admin-only" style="padding:2px 6px; font-size:11px;" onclick="deleteSection(this)">අංශය මකන්න</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">අංකය</th>
+                                        <th style="width: 12%;">දිනය</th>
+                                        <th style="width: 60%;">සිදුවීම</th>
+                                        <th style="width: 23%;">වත්මන් තත්වය</th>
+                                        <th class="admin-only action-col" style="width: 5%;">ක්‍රියා</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">1</td>
+                                        <td contenteditable="false">2026.07.03</td>
+                                        <td contenteditable="false">7(ස්වේ) ඉස්ස්සේ වෙත අයත් දැනට 14 (ස්වේ) ඉසේරේ යටතේ පොදු රාජකාරී ඉටු කරනු ලබන සෙ/7 එස්00050 ඉසෙ අපිත් කුමාර කේවයි යන සෙනි 2026.07.03 වන දින හෝරා 1700 ට පමණ බැහැරවාසි අවසරය මත කඳවුරෙන් බැහැරව දෙමටගොඩ දුම්රිය ස්ථානයේදී වේදිකා අංක 03 වෙත පැමිණි කොළඹ සිට අනුරාධපුර බලා ධාවනය වූ සීඝ්‍රගාමී දුම්රිය වෙත ගොඩ වීමට යාමේදී ඉන් ඇඳ වැටී අනතුරට ලක්ව ප්‍රතිකාර සඳහා ජාතික රෝහල - කොළඹ වෙත ඇතුළත් කිරීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">තත් සෙහි දැනට කොළඹ ජාතික රෝහලේ දැඩි සත්කාර ඒකකය යටතේ ප්‍රතිකාර ලබන බැවින් ඔහු වෙතින් ප්‍රකාශ ලබා ගැනීමට ඇත.</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Section: ආසේඅමාවි -->
+                    <div class="section-block">
+                        <div class="section-banner">
+                            <span contenteditable="false">ආසේඅමාවි - 1</span>
+                            <button class="btn btn-danger admin-only" style="padding:2px 6px; font-size:11px;" onclick="deleteSection(this)">අංශය මකන්න</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">අංකය</th>
+                                        <th style="width: 12%;">දිනය</th>
+                                        <th style="width: 60%;">සිදුවීම</th>
+                                        <th style="width: 23%;">වත්මන් තත්වය</th>
+                                        <th class="admin-only action-col" style="width: 5%;">ක්‍රියා</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">1</td>
+                                        <td contenteditable="false">2026.06.28</td>
+                                        <td contenteditable="false">1 ගැහේබ වෙත අයත් දැනට එම ඒකකයේ විධායක අධිකාරි වශයෙන් රාජකාරි කරනු ලබන නි/71898 කපිතන් එඑඑන් බංඩාර යන නිලධාරි නිවාඩු ලබා සිය නිවස වෙත පැමිණ සිටියදී 2026.06.28 වන දින ඔහු හට අයත් CP GO 9956 අංක දරන යතුරු පැදියෙන් මීගහවත්ත උඩුපිල මාර්ගයේ උඩුපිල දෙසට ගමන් කරමින් සිටියදි කම්මල්වත්ත රබර්මෝල මංසන්දියේදී ඔහුට ප්‍රථිවිරුද්ධ දෙසින් පැමිණි 28 - 5220 දරන බෲම් වර්ගයේ ලොරි රථය දකුණු දෙසට හැරවීමේදී තත් නිලධාරී ගමන්ගත් යතුරු පැදිය පාලනය කර ගැනීමට නොහැකිව එම ලොරි රථයේ වම්පස බද කොටසේ ගැටී එදින හෝරා 1610 ට පමණ රිය අනතුරට ලක්වීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">විවිශා අධික්ෂණය සඳහා ඉදිරිපත් කර ඇත.</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Section: 141 පාබල බසේමු -->
+                    <div class="section-block">
+                        <div class="section-banner">
+                            <span contenteditable="false">141 පාබල බසේමු - 1</span>
+                            <button class="btn btn-danger admin-only" style="padding:2px 6px; font-size:11px;" onclick="deleteSection(this)">අංශය මකන්න</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">අංකය</th>
+                                        <th style="width: 12%;">දිනය</th>
+                                        <th style="width: 60%;">සිදුවීම</th>
+                                        <th style="width: 23%;">වත්මන් තත්වය</th>
+                                        <th class="admin-only action-col" style="width: 5%;">ක්‍රියා</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-center" contenteditable="false">1</td>
+                                        <td contenteditable="false">2026.07.24</td>
+                                        <td contenteditable="false">4 ශ්‍රීලංසිරෙ වෙත අයත් දැනට රෙජිමුඛ ශ්‍රිලංසිරෙ යටතේ පොදු රාජකාරි කරනු ලබන සෙ/369357 පාසෙ සේනානායක ඩබ්ලිඑස් එස් යන සෙනි 2026.07.24 වන දින හෝරා 0800 සිට 2026.07.25 වන දින හෝරා 0800 දක්වා නිවාඩු ලබා අංක 01/26/ඒ, පැලතවාන, හළුගම, මීරිගම යන ලිපිනයේ පිහිටි නිවස වෙත ගොස් 2026.07.24 වන දින හළුගම ප්‍රදේශයේ රැදි සිටියදි මීරිගම පොලිස් ස්ථානයේ නිලධාරීන් පිරිසක් විසින් තත් සෙහි සැකපිට පරික්‍ෂාවට ලක් කිරීමේදි ඔහු සන්තකයේ තිබූ හෙරොයින් නැමති නීති විරෝධි මත්ද්‍රව්‍ය මිලිග්‍රෑම් 2250 ක ප්‍රමාණයක් සමඟින් එදින හෝරා 1350 ට පමණ අත්අඩංගුවට ගැනීමේ සිදුවීම.</td>
+                                        <td contenteditable="false">පොලිස් වාර්තාව ලබා ගැනීමට ඇත, රෙපි අභ ශ්‍රීලංසිරෙ වෙතින් ප්‍රකාශ ලබා ගැනීමට ඇත 3/4</td>
+                                        <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>ශ්‍රී ලංකා යුධ හමුදා පොලිස් හේවාබලකාය - විමර්ශන දත්ත පද්ධතිය © 2026</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentRole = 'user';
+
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const role = document.getElementById('role').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            if (password === '1234') {
+                errorMsg.style.display = 'none';
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-screen').style.display = 'flex';
+                
+                currentRole = role;
+                const badge = document.getElementById('user-role-badge');
+                const adminElements = document.querySelectorAll('.admin-only');
+                
+                if (role === 'admin') {
+                    badge.textContent = 'Admin Panel';
+                    badge.className = 'badge admin';
+                    adminElements.forEach(el => el.style.display = 'inline-block');
+                    // Enable content editing only for Admin
+                    setEditableState(true);
+                } else {
+                    badge.textContent = 'User Panel';
+                    badge.className = 'badge';
+                    adminElements.forEach(el => el.style.display = 'none');
+                    setEditableState(false);
+                }
+            } else {
+                errorMsg.style.display = 'block';
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            document.getElementById('app-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('password').value = '';
+        });
+
+        function switchTab(tabId) {
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function setEditableState(isEditable) {
+            const editables = document.querySelectorAll('td, .editable-date, .section-banner span');
+            editables.forEach(el => {
+                if(!el.classList.contains('action-col')) {
+                    el.contentEditable = isEditable ? "true" : "false";
+                }
+            });
+        }
+
+        // Admin functions to add rows, columns, sections
+        function addRowToActiveTable() {
+            const activeTab = document.querySelector('.tab-content.active');
+            const table = activeTab.querySelector('table');
+            if (!table) return;
+            const tbody = table.querySelector('tbody') || table;
+            const colCount = table.querySelectorAll('thead th').length;
+            
+            let newRow = document.createElement('tr');
+            for(let i=0; i<colCount; i++) {
+                let td = document.createElement('td');
+                td.contentEditable = "true";
+                if(i === colCount - 1 && currentRole === 'admin' && table.querySelector('.action-col')) {
+                    td.className = "admin-only action-col text-center";
+                    td.innerHTML = '<button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button>';
+                } else {
+                    td.textContent = "නව දත්තය";
+                }
+                newRow.appendChild(td);
+            }
+            tbody.appendChild(newRow);
+        }
+
+        function addColumnToActiveTable() {
+            const activeTab = document.querySelector('.tab-content.active');
+            const table = activeTab.querySelector('table');
+            if (!table) return;
+            
+            // Add header
+            const theadRows = table.querySelectorAll('thead tr');
+            theadRows.forEach(tr => {
+                let th = document.createElement('th');
+                th.textContent = "නව තීරුව";
+                th.contentEditable = "true";
+                tr.insertBefore(th, tr.lastElementChild);
+            });
+
+            // Add cells to body rows
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(tr => {
+                let td = document.createElement('td');
+                td.textContent = "-";
+                td.contentEditable = "true";
+                tr.insertBefore(td, tr.lastElementChild);
+            });
+        }
+
+        function addNewSectionTab2() {
+            const container = document.getElementById('tab2-sections-container');
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'section-block';
+            sectionDiv.innerHTML = `
+                <div class="section-banner">
+                    <span contenteditable="true">නව අංශය - 01</span>
+                    <button class="btn btn-danger admin-only" style="padding:2px 6px; font-size:11px;" onclick="deleteSection(this)">අංශය මකන්න</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">අංකය</th>
+                                <th style="width: 12%;">දිනය</th>
+                                <th style="width: 60%;">සිදුවීම</th>
+                                <th style="width: 23%;">වත්මන් තත්වය</th>
+                                <th class="admin-only action-col" style="width: 5%;">ක්‍රියා</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-center" contenteditable="true">1</td>
+                                <td contenteditable="true">2026.07.30</td>
+                                <td contenteditable="true">සිදුවීම් විස්තරය මෙහි ඇතුළත් කරන්න...</td>
+                                <td contenteditable="true">වත්මන් තත්වය...</td>
+                                <td class="admin-only action-col text-center"><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="deleteRow(this)">මකන්න</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            container.appendChild(sectionDiv);
+        }
+
+        function deleteRow(btn) {
+            const row = btn.closest('tr');
+            row.remove();
+        }
+
+        function deleteSection(btn) {
+            const section = btn.closest('.section-block');
+            section.remove();
+        }
+
+        // Export Functions
+        function exportToExcel() {
+            const activeTab = document.querySelector('.tab-content.active');
+            const table = activeTab.querySelector('table');
+            let wb = XLSX.utils.table_to_book(table, {sheet: "Sheet1"});
+            XLSX.writeFile(wb, "Vimarsana_Daththa.xlsx");
+        }
+
+        function exportToWord() {
+            const activeTab = document.querySelector('.tab-content.active').innerHTML;
+            let blob = new Blob(['\ufeff' + activeTab], {
+                type: 'application/msword'
+            });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = "Vimarsana_Document.doc";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function exportToPDF() {
+            const element = document.querySelector('.tab-content.active');
+            let opt = {
+                margin:       10,
+                filename:     'Vimarsana_Report.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(opt).save();
+        }
+
+        function shareData() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'විමර්ශන දත්ත පද්ධතිය',
+                    text: 'පද්ධතියේ වාර්තා දත්ත පරීක්ෂා කරන්න.',
+                    url: window.location.href,
+                }).catch((error) => console.log('Sharing failed', error));
+            } else {
+                alert('ඔබගේ බ්‍රව්සරය ෂෙයාර් කිරීමේ පහසුකම සපයන්නේ නැත. ලිපිනය කොපි කරගත හැක.');
+            }
+        }
+    </script>
+</body>
+</html>
